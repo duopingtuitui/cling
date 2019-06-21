@@ -78,11 +78,19 @@ public class MulticastReceiverImpl implements MulticastReceiver<MulticastReceive
 
             socket = new MulticastSocket(configuration.getPort());
             socket.setReuseAddress(true);
-            socket.setReceiveBufferSize(32768); // Keep a backlog of incoming datagrams if we are not fast enough
+//            socket.setBroadcast(true);
+            //socket.setReceiveBufferSize(32768);
+            //zxy modify 20180302
+            socket.setReceiveBufferSize(32768000); // Keep a backlog of incoming datagrams if we are not fast enough
 
             log.info("Joining multicast group: " + multicastAddress + " on network interface: " + multicastInterface.getDisplayName());
             socket.joinGroup(multicastAddress, multicastInterface);
-
+            //zxy add 20180306
+            socket.setLoopbackMode(true);
+//            socket.setNetworkInterface(NetworkInterface.getByName("wlan0"));
+            //socket.setTimeToLive(1);
+            //zxy modify 20180302
+			socket.setTimeToLive(20);
         } catch (Exception ex) {
             throw new InitializationException("Could not initialize " + getClass().getSimpleName() + ": " + ex);
         }

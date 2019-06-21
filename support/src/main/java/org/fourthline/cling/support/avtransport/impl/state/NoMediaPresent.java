@@ -58,4 +58,5 @@ public abstract class NoMediaPresent<T extends AVTransport> extends AbstractStat
                 TransportAction.Stop
         };
     }
+    public abstract  Class<? extends  AbstractState> stop();
 }

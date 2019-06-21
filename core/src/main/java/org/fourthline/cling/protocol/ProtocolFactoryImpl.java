@@ -53,7 +53,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.net.URI;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -68,6 +70,7 @@ public class ProtocolFactoryImpl implements ProtocolFactory {
     final private static Logger log = Logger.getLogger(ProtocolFactory.class.getName());
 
     protected final UpnpService upnpService;
+    protected final Set<MessageListener> msgListeners = new HashSet<>();
 
     protected ProtocolFactoryImpl() {
         upnpService = null;
@@ -259,5 +262,17 @@ public class ProtocolFactoryImpl implements ProtocolFactory {
 
     protected ReceivingEvent createReceivingEvent(StreamRequestMessage message) {
         return new ReceivingEvent(getUpnpService(), message);
+    }
+    
+    public void addListener(MessageListener listener) {
+        msgListeners.add(listener);
+    }
+    
+    public void removeListener(MessageListener listener) {
+        msgListeners.remove(listener);
+    }
+    
+    public Set<MessageListener> getMessageListeners() {
+        return msgListeners;
     }
 }

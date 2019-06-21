@@ -33,6 +33,7 @@ import org.fourthline.cling.protocol.sync.SendingSubscribe;
 import org.fourthline.cling.protocol.sync.SendingUnsubscribe;
 
 import java.net.URL;
+import java.util.Set;
 
 /**
  * Factory for UPnP protocols, the core implementation of the UPnP specification.
@@ -116,4 +117,8 @@ public interface ProtocolFactory {
      * Called by the {@link org.fourthline.cling.model.gena.GENASubscription}, creates a protocol for sending GENA events.
      */
     public SendingEvent createSendingEvent(LocalGENASubscription subscription);
+    
+    public void addListener(MessageListener listener);
+    public void removeListener(MessageListener listener);
+    public Set<MessageListener> getMessageListeners();
 }

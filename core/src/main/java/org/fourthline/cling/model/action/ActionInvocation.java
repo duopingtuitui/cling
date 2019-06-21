@@ -141,7 +141,10 @@ public class ActionInvocation<S extends Service> {
             this.input.put(argumentValue.getArgument().getName(), argumentValue);
         }
     }
-
+  public void removeInput(String key) {
+        if (key == null) return;
+        input.remove(key);
+  }
     public void setOutput(String argumentName, Object value) throws InvalidValueException {
         setOutput(new ActionArgumentValue(getOutputArgument(argumentName), value));
     }

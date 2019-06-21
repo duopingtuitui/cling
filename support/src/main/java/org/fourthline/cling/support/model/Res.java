@@ -99,6 +99,9 @@ public class Res {
     }
 
     public Long getSize() {
+        if (size == null) {
+            size=0L;
+        }
         return size;
     }
 

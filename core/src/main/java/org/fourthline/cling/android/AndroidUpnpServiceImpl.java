@@ -96,7 +96,9 @@ public class AndroidUpnpServiceImpl extends Service {
      */
     @Override
     public void onDestroy() {
-        upnpService.shutdown();
+        if(upnpService != null){
+            upnpService.shutdown();
+        }
         super.onDestroy();
     }
 

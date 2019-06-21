@@ -252,6 +252,7 @@ public class DefaultUpnpServiceConfiguration implements UpnpServiceConfiguration
     public Executor getRegistryListenerExecutor() {
         return getDefaultExecutorService();
     }
+    public Executor getMessageListenerExecutor() {return getDefaultExecutorService();}
 
     public NetworkAddressFactory createNetworkAddressFactory() {
         return createNetworkAddressFactory(streamListenPort);

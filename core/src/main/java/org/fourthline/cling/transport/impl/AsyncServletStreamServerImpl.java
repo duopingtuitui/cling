@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
@@ -104,7 +105,19 @@ public class AsyncServletStreamServerImpl implements StreamServer<AsyncServletSt
                 if (log.isLoggable(Level.FINE))
                 	log.fine(String.format("HttpServlet.service(): id: %3d, request URI: %s", counter, req.getRequestURI()));
 
-                AsyncContext async = req.startAsync();
+                AsyncContext async = null;
+                //原来的代码
+//                async = req.startAsync();
+
+                //修改后
+                //此处使用反射调用是为了处理魅族手机直接调用req.startAsync()会出问题的bug
+                try {
+                    Method startAsyncMethod = req.getClass().getMethod("startAsync");
+                    async = (AsyncContext) startAsyncMethod.invoke(req);
+                } catch (Exception e) {}
+                if(async == null){
+                    return;
+                }
                 async.setTimeout(getConfiguration().getAsyncTimeoutSeconds()*1000);
 
                 async.addListener(new AsyncListener() {

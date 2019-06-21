@@ -31,6 +31,7 @@ import org.fourthline.cling.transport.RouterImpl;
 import org.fourthline.cling.transport.spi.InitializationException;
 import org.seamless.util.Exceptions;
 
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -212,21 +213,33 @@ public class AndroidRouter extends RouterImpl {
             oldNetwork == null ? "" : oldNetwork.getTypeName(),
             newNetwork == null ? "NONE" : newNetwork.getTypeName()));
 
-        if (disable()) {
+//        boolean isNeedUpdate = false;
+//        if(newNetwork != null && newNetwork.isAvailable() && newNetwork.getType() == ConnectivityManager.TYPE_WIFI) {
+//            isNeedUpdate = true;
+//        }
+
+        //cling库中原代码中是没有isNeedUpdate判断的，后来加上isNeedUpdate判断后，会产生一个问题，WIFI和网线之间的切换不会执行以下代码
+        //所以取消掉isNeedUpdate判断
+        boolean isNeedUpdate = true;
+
+        if (isNeedUpdate && disable()) {
             log.info(String.format(
                 "Disabled router on network type change (old network: %s)",
                 oldNetwork == null ? "NONE" : oldNetwork.getTypeName()
             ));
+            getProtocolFactory().getUpnpService().getRegistry().removeAllRemoteDevices();
         }
 
         networkInfo = newNetwork;
-        if (enable()) {
+        if (isNeedUpdate && enable()) {
             // Can return false (via earlier InitializationException thrown by NetworkAddressFactory) if
             // no bindable network address found!
             log.info(String.format(
                 "Enabled router on network type change (new network: %s)",
                 newNetwork == null ? "NONE" : newNetwork.getTypeName()
             ));
+            getProtocolFactory().getUpnpService().getRegistry().advertiseLocalDevices();
+            getProtocolFactory().getUpnpService().getControlPoint().search();
         }
     }
 
@@ -269,25 +282,46 @@ public class AndroidRouter extends RouterImpl {
                     } catch (InterruptedException e) {
                         return;
                     }
-                    log.warning(String.format(
-                        "%s => NONE network transition, waiting for new network... retry #%d",
-                        networkInfo.getTypeName(), i
-                    ));
+
+                    if(networkInfo != null){
+                        log.warning(String.format(
+                                "%s => NONE network transition, waiting for new network... retry #%d",
+                                networkInfo.getTypeName(), i
+                        ));
+                    }
+
                     newNetworkInfo = NetworkUtils.getConnectedNetworkInfo(context);
                     if (newNetworkInfo != null)
                         break;
                 }
             }
 
-            if (isSameNetworkType(networkInfo, newNetworkInfo)) {
-                log.info("No actual network change... ignoring event!");
-            } else {
-                try {
-                    onNetworkTypeChange(networkInfo, newNetworkInfo);
-                } catch (RouterException ex) {
-                    handleRouterExceptionOnNetworkTypeChange(ex);
-                }
+//            if (isSameNetworkType(networkInfo, newNetworkInfo)) {
+//                log.info("No actual network change... ignoring event!");
+//            } else {
+
+
+            try {
+                //将onNetworkTypeChange放到子线程运行，在主线程容易出现writeLock获取卡顿ui线程的情况
+                final NetworkInfo copy = newNetworkInfo;
+                Executors.newCachedThreadPool().execute(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        try {
+                            onNetworkTypeChange(networkInfo, copy);
+                        } catch (RouterException ex) {
+                            handleRouterExceptionOnNetworkTypeChange(ex);
+                        } catch (Exception e){
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+            }catch (Exception e){
+                e.printStackTrace();
             }
+
         }
 
         protected boolean isSameNetworkType(NetworkInfo network1, NetworkInfo network2) {

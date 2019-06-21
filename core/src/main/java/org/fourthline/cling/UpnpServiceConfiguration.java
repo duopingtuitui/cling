@@ -247,6 +247,7 @@ public interface UpnpServiceConfiguration {
      * @return The executor which runs the notification threads of registry listeners.
      */
     public Executor getRegistryListenerExecutor();
+    public Executor getMessageListenerExecutor();
 
     /**
      * Called by the {@link org.fourthline.cling.UpnpService} on shutdown, useful to e.g. shutdown thread pools.

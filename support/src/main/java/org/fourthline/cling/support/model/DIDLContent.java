@@ -121,8 +121,11 @@ public class DIDLContent {
         List<Item> specificItems = new ArrayList<>();
 
         for (Item genericItem : genericItems) {
-            String genericType = genericItem.getClazz().getValue();
-
+            DIDLObject.Class clazz = genericItem.getClazz();
+            String genericType = "";
+            if (clazz != null) {
+                genericType = clazz.getValue();
+            }
             if (AudioItem.CLASS.getValue().equals(genericType)) {
                 specificItems.add(new AudioItem(genericItem));
             } else if (MusicTrack.CLASS.getValue().equals(genericType)) {

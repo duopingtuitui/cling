@@ -22,6 +22,7 @@ import org.fourthline.cling.model.message.IncomingDatagramMessage;
 import org.fourthline.cling.model.message.StreamRequestMessage;
 import org.fourthline.cling.model.message.header.UpnpHeader;
 import org.fourthline.cling.model.meta.LocalDevice;
+import org.fourthline.cling.protocol.MessageListener;
 import org.fourthline.cling.protocol.ProtocolCreationException;
 import org.fourthline.cling.protocol.ProtocolFactory;
 import org.fourthline.cling.protocol.ReceivingAsync;
@@ -37,7 +38,7 @@ import org.fourthline.cling.protocol.sync.SendingUnsubscribe;
 
 import javax.enterprise.inject.Alternative;
 import java.net.URL;
-
+import java.util.Set;
 /**
  * @author Christian Bauer
  */
@@ -96,6 +97,21 @@ public class MockProtocolFactory implements ProtocolFactory {
 
     @Override
     public SendingEvent createSendingEvent(LocalGENASubscription subscription) {
+        return null;
+    }
+
+    @Override
+    public void addListener(MessageListener listener) {
+        
+    }
+
+    @Override
+    public void removeListener(MessageListener listener) {
+
+    }
+
+    @Override
+    public Set<MessageListener> getMessageListeners() {
         return null;
     }
 }

@@ -92,7 +92,7 @@ public class XMLUtil {
                     b.append(" ");
                     b.append(attr.getNodeName());
                     b.append("=\"");
-                    b.append(attr.getNodeValue());
+                    b.append(encodeText(attr.getNodeValue()));
                     b.append("\"");
                 }
             }

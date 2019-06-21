@@ -41,7 +41,9 @@ public class MulticastReceiverConfigurationImpl implements MulticastReceiverConf
      * Defaults to maximum datagram size of 640 bytes (512 per UDA 1.0, 128 byte header).
      */
     public MulticastReceiverConfigurationImpl(InetAddress group, int port) {
-        this(group, port, 640);
+//        this(group, port, 640);
+        //zxy modify 20180302
+        this(group, port, 64000);
     }
 
     public MulticastReceiverConfigurationImpl(String group, int port, int maxDatagramBytes) throws UnknownHostException {
@@ -52,7 +54,9 @@ public class MulticastReceiverConfigurationImpl implements MulticastReceiverConf
      * Defaults to maximum datagram size of 640 bytes (512 per UDA 1.0, 128 byte header).
      */
     public MulticastReceiverConfigurationImpl(String group, int port) throws UnknownHostException {
-        this(InetAddress.getByName(group), port, 640);
+//        this(InetAddress.getByName(group), port, 640);
+        //zxy modify 20180302
+        this(InetAddress.getByName(group), port, 64000);
     }
 
     public InetAddress getGroup() {

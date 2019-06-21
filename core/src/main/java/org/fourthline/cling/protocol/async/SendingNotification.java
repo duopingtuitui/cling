@@ -29,7 +29,10 @@ import org.fourthline.cling.model.types.ServiceType;
 import org.fourthline.cling.protocol.SendingAsync;
 import org.fourthline.cling.transport.RouterException;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -59,8 +62,47 @@ public abstract class SendingNotification extends SendingAsync {
 
     protected void execute() throws RouterException {
 
+
+
+        /**
+         * 2018-08-14 邓军修改
+         * 修改原因:在有些设备上，可能会有多个ip，会造成推送过程中ip变化，但是，推送不了的现象。
+         * 例如：创维盒子就有两个ip，10.128.1.252为可用ip,100.119.242.91为不可用ip,在使用过程中ip会从可用变为不可用。
+         * 解决办法：在获取ip时，传入一个perferredAddress,这样，如果该ip正确，就只会有一个ip，如果不正确，也不会影响
+         * 原来的逻辑,会获取所有的ip。
+         *
+         * 缺点：暂时不知道如何更好的获取perferredAddress
+         */
+        InetAddress perferredAddress = null;
+        String ipAddr;
+        try {
+            //获取IP方式一 //TODO
+//            if((ipAddr = NetUtils.getIPAddress(App.getContextObject())) != null) {
+//                perferredAddress = InetAddress.getByName(ipAddr);
+//            }
+
+            ////获取IP方式二
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();)
+            {
+                NetworkInterface intf = en.nextElement();
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();)
+                {
+                    InetAddress inetAddress = enumIpAddr.nextElement();
+                    if (!inetAddress.isLoopbackAddress())
+                    {
+                        perferredAddress = inetAddress;
+                     Log.d("dja","address "+inetAddress.getHostAddress());
+  break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            perferredAddress = null;
+        }
+        Log.i("dja","perferredAddress:"+perferredAddress.getHostAddress());
         List<NetworkAddress> activeStreamServers =
-            getUpnpService().getRouter().getActiveStreamServers(null);
+            getUpnpService().getRouter().getActiveStreamServers(perferredAddress);
         if (activeStreamServers.size() == 0) {
             log.fine("Aborting notifications, no active stream servers found (network disabled?)");
             return;

@@ -315,4 +315,11 @@ public class AVTransportService<T extends AVTransport> extends AbstractAVTranspo
         return new AVTransport(instanceId, lastChange, StorageMedium.NETWORK);
     }
 
+    public void transferStateMachine(UnsignedIntegerFourBytes instanceId, Class<? extends AbstractState> newStateMachine) {
+        synchronized (stateMachines) {
+            long id = instanceId.getValue();
+            AVTransportStateMachine stateMachine = stateMachines.get(id);
+            stateMachine.forceState(newStateMachine);
+        }
+    }
 }

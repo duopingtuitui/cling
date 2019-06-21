@@ -16,8 +16,10 @@
 package org.fourthline.cling.protocol.sync;
 
 import org.fourthline.cling.UpnpService;
+import org.fourthline.cling.model.action.ActionArgumentValue;
 import org.fourthline.cling.model.action.ActionCancelledException;
 import org.fourthline.cling.model.action.ActionException;
+import org.fourthline.cling.model.action.ActionExecutor;
 import org.fourthline.cling.model.action.RemoteActionInvocation;
 import org.fourthline.cling.model.message.StreamRequestMessage;
 import org.fourthline.cling.model.message.StreamResponseMessage;
@@ -26,8 +28,11 @@ import org.fourthline.cling.model.message.control.IncomingActionRequestMessage;
 import org.fourthline.cling.model.message.control.OutgoingActionResponseMessage;
 import org.fourthline.cling.model.message.header.ContentTypeHeader;
 import org.fourthline.cling.model.message.header.UpnpHeader;
+import org.fourthline.cling.model.meta.Action;
+import org.fourthline.cling.model.profile.RemoteClientInfo;
 import org.fourthline.cling.model.resource.ServiceControlResource;
 import org.fourthline.cling.model.types.ErrorCode;
+import org.fourthline.cling.protocol.MessageListener;
 import org.fourthline.cling.protocol.ReceivingSync;
 import org.fourthline.cling.model.UnsupportedDataException;
 import org.fourthline.cling.transport.RouterException;
@@ -35,6 +40,9 @@ import org.seamless.util.Exceptions;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * Handles reception of control messages, invoking actions on local services.
@@ -90,7 +98,7 @@ public class ReceivingAction extends ReceivingSync<StreamRequestMessage, StreamR
         try {
 
             // Throws ActionException if the action can't be found
-            IncomingActionRequestMessage requestMessage =
+            final IncomingActionRequestMessage requestMessage =
                     new IncomingActionRequestMessage(getInputMessage(), resource.getModel());
 
             log.finer("Created incoming action request message: " + requestMessage);
@@ -98,11 +106,52 @@ public class ReceivingAction extends ReceivingSync<StreamRequestMessage, StreamR
 
             // Throws UnsupportedDataException if the body can't be read
             log.fine("Reading body of request message");
+            String actionname = invocation.getAction().getName();
+            if ( actionname.equals("GetMediaInfo")){}else {
+                
+       //    System.out.println("zyf receive action "+invocation.getAction().getName()+" ");
+                }
             getUpnpService().getConfiguration().getSoapActionProcessor().readBody(requestMessage, invocation);
+            if (requestMessage.getConnection().getRemoteAddress().equals(requestMessage.getConnection().getLocalAddress())) {
+                String actionName = invocation.getAction().getName();
+                if (actionName.equalsIgnoreCase("SetAVTransportURI")) {
+                  try {
+                      DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                      ActionArgumentValue actionArgument = invocation.getInput("currentURIMetaData");
+                      if (actionArgument == null) {
+                          actionArgument = invocation.getInput("CurrentURIMetaData");
+                      }
+                      String metaDataString = actionArgument.toString();  
+                      metaDataString = metaDataString.replace("</DIDL-Lite>", "<tuitui:isFromSelf xmlns:tuitui=\"tuitui\">1</tuitui:isFromSelf></DIDL-Lite>");
 
-            log.fine("Executing on local service: " + invocation);
-            resource.getModel().getExecutor(invocation.getAction()).execute(invocation);
+                      invocation.removeInput("currentURIMetaData");
+                      invocation.setInput("currentURIMetaData", metaDataString);
 
+                  }catch (Exception e) {
+                      e.printStackTrace();
+                      System.out.println("zyf error "+e.getMessage());
+                  }
+                }
+                for (final MessageListener listener : getUpnpService().getProtocolFactory().getMessageListeners()) {
+                    getUpnpService().getConfiguration().getMessageListenerExecutor().execute(
+                            new Runnable() {
+                                public void run() {
+                                    Action actionInvocation = requestMessage.getAction();
+                                    RemoteClientInfo clientInfo = getRemoteClientInfo();
+                                    listener.receiveLocalMessage(requestMessage, new RemoteActionInvocation(actionInvocation, getRemoteClientInfo()));
+                                }
+                            }
+                    );
+                }
+                if (!actionName.equalsIgnoreCase("SetVolume") && !actionName.equalsIgnoreCase("AddVolume") && !actionName.equalsIgnoreCase("SubVolume")) {
+                    ActionExecutor executor = resource.getModel().getExecutor(invocation.getAction());
+                    executor.execute(invocation);
+                }
+            }else {
+                log.fine("Executing on local service: " + invocation);
+                resource.getModel().getExecutor(invocation.getAction()).execute(invocation);
+            } 
+            
             if (invocation.getFailure() == null) {
                 responseMessage =
                         new OutgoingActionResponseMessage(invocation.getAction());

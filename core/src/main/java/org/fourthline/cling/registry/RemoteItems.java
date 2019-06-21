@@ -23,6 +23,8 @@ import org.fourthline.cling.model.meta.RemoteDevice;
 import org.fourthline.cling.model.meta.RemoteDeviceIdentity;
 import org.fourthline.cling.model.types.UDN;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -127,6 +129,16 @@ class RemoteItems extends RegistryItems<RemoteDevice, RemoteGENASubscription> {
 
         RemoteDevice registeredRemoteDevice = get(rdIdentity.getUdn(), false);
         if (registeredRemoteDevice != null) {
+            try {
+                if(!compareDevice(rdIdentity,registeredRemoteDevice)){
+                    URL newUrl = new URL(rdIdentity.getDescriptorURL().getProtocol(),rdIdentity.getDescriptorURL().getHost()
+                            ,rdIdentity.getDescriptorURL().getPort(),rdIdentity.getDescriptorURL().getFile());
+                    (registeredRemoteDevice.getIdentity()).setDescriptorURL(newUrl);
+                }
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
 
             if (!registeredRemoteDevice.isRoot()) {
                 log.fine("Updating root device of embedded: " + registeredRemoteDevice);
@@ -161,6 +173,22 @@ class RemoteItems extends RegistryItems<RemoteDevice, RemoteGENASubscription> {
 
         }
         return false;
+    }
+    ////zxy  此处存在漏洞   需要比较的数据较多，需要更新的也比较多,目前只比较和同步了基本的url，用于发送设备图片的，
+    private boolean compareDevice(RemoteDeviceIdentity rdIdentity, RemoteDevice registeredRemoteDevice) {
+        URL rdUrl = rdIdentity.getDescriptorURL();
+        URL registUrl = registeredRemoteDevice.getIdentity().getDescriptorURL();
+        if(rdUrl.getPort()!=registUrl.getPort() ){
+            return false;
+        }else if((rdUrl.getHost() == null && registUrl.getHost() != null)
+                || (rdUrl.getHost() != null && registUrl.getHost() == null)){
+            return false;
+        }else if(rdUrl.getHost() == null && registUrl.getHost() == null){
+            return false;
+        }else if(!rdUrl.getHost().equals(registUrl.getHost())){
+            return false;
+        }
+        return true;
     }
 
     /**
